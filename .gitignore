@@ -1,0 +1,43 @@
+# Environnement Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Fichiers binaires et compilés
+**/*.o
+**/crackme_??/crackme
+**/cracks/*
+!**/cracks/*.s
+!**/cracks/*.md
+
+# Dossiers d'analyse et cibles externes
+/targets/
+**/analysis_*/
+**/*.backup
+
+# Fichiers d'IDE et configuration
+.cursor/
+.vscode/
+.idea/
+
+# Scripts utilitaires (non requis par le projet)
+/scripts/
+
+# Makefile (non requis par le projet)
+Makefile
+
+# Fichiers temporaires et logs
+**/*.log
+**/*.tmp
+**/tmp/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# N'exclut PAS les éléments requis
+!AUTHORS.md
+!**/crackme_??/*.s
+!**/crackme_??/README.md
+!**/writeups/*.pdf
+!**/writeups/*.md
