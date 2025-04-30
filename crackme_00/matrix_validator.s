@@ -1,337 +1,333 @@
 ; ===========================================================================
-; Crackme 00 - Validateur de Transformation Matricielle
+; Crackme: Matrix Transformation Validator (Version Finale)
 ; ===========================================================================
-; Architecture: x64 Linux
-; Description: L'entrée utilisateur est traitée comme une matrice 4x4
-;              et subit plusieurs transformations avant validation.
+; Description: 
+; Ce crackme traite un mot de passe de 16 caractères comme une matrice 4x4
+; et lui applique des transformations pour le valider.
+; Difficulté: Moyenne
+; Mécanisme de protection: Transformations matricielles
 
 section .data
-    ; Messages du programme
-    prompt      db "Enter password: ", 0
-    prompt_len  equ $ - prompt - 1
-    good_msg    db "Good Job! Flag: ", 0
-    good_len    equ $ - good_msg - 1
-    bad_msg     db "Bad Password!", 10, 0
-    bad_len     equ $ - bad_msg - 1
+    prompt          db "Enter password: ", 0
+    prompt_len      equ $ - prompt - 1
+    good_msg        db "Good Job!", 10, 0
+    good_msg_len    equ $ - good_msg - 1
+    bad_msg         db "Bad Password!", 10, 0
+    bad_msg_len     equ $ - bad_msg - 1
     
-    ; Format du flag
-    flag_prefix db "HTB{", 0
-    flag_suffix db "}", 10, 0
+    ; Le flag correct: M4TR1X_TR4NSF0RM (exactement 16 caractères)
+    correct_pwd     db "M4TR1X_TR4NSF0RM", 0
     
-    ; Matrices de transformation et de validation (obscurcies)
-    ; Ces matrices sont utilisées pour transformer l'entrée et comparer
-    ; Les valeurs sont calculées pour que le password "MATR1X_TR4NSF0RM" 
-    ; soit le seul input qui génère une correspondance parfaite
-    
-    ; Matrice de rotation (4x4)
-    rot_matrix  db 0, 1, 0, 0
-                db 0, 0, 1, 0
-                db 0, 0, 0, 1
-                db 1, 0, 0, 0
-    
-    ; Matrice de transposition XOR (4x4)
-    xor_matrix  db 42, 33, 27, 19
-                db 31, 44, 23, 38
-                db 26, 35, 41, 29
-                db 17, 22, 36, 45
-    
-    ; Matrice de validation attendue (4x4) (valeurs pré-calculées)
-    ; Ces valeurs sont le résultat attendu après transformation du flag
-    val_matrix  db 114, 127, 135, 114
-                db 122, 144, 138, 159
-                db 129, 150, 131, 121
-                db 116, 137, 143, 134
-    
-    ; Données pour générer le flag dynamiquement
-    ; Ces valeurs encodées représentent le vrai flag
-    flag_data   db 95, 58, 24, 113, 85, 41, 39, 101, 54, 15, 74, 85, 126, 94, 35, 113, 92, 54, 64, 28
-    flag_key    db 42, 19, 85, 63, 28, 73, 91, 45, 37, 56, 25, 44, 89, 31, 77, 62, 48, 29, 15, 83
-    
-    ; Signature pour le crack - PATCH_HERE
-    crack_signature db "CRACK_SIGNATURE_HERE", 0
+    ; Matrice cible après transformations
+    target_matrix   db 0x0F, 0x53, 0x57, 0x09
+                    db 0x54, 0x07, 0x58, 0x55
+                    db 0x5B, 0x5D, 0x03, 0x5A
+                    db 0x02, 0x51, 0x08, 0x56
+                    
+    ; Matrice de transformation pour les opérations
+    transform_matrix db 1, 0, 1, 0
+                     db 0, 1, 0, 1
+                     db 1, 0, 1, 0
+                     db 0, 1, 0, 1
+                    
+    ; Clés XOR pour le chiffrement positionnel
+    xor_keys        db 0x10, 0x20, 0x30, 0x40
+                    db 0x50, 0x60, 0x70, 0x80
+                    db 0x90, 0xA0, 0xB0, 0xC0
+                    db 0xD0, 0xE0, 0xF0, 0x01
 
 section .bss
-    ; Tampon pour l'entrée utilisateur
-    input       resb 64     ; Tampon d'entrée
-    input_len   resq 1      ; Longueur de l'entrée
+    input_buffer    resb 64
     
-    ; Matrices de travail
-    input_matrix resb 16    ; Matrice d'entrée 4x4
-    temp_matrix  resb 16    ; Matrice temporaire pour les transformations
-    result_matrix resb 16   ; Matrice de résultat
+    input_matrix    resb 16
     
-    ; Flag généré
-    flag_buffer  resb 32    ; Buffer pour stocker le flag généré
+    working_matrix  resb 16
+
+    temp_matrix     resb 16
 
 section .text
     global _start
-
+    
 _start:
-    ; ===== MODULE D'ENTRÉE/SORTIE =====
-    ; Affiche l'invite
-    mov rax, 1              ; sys_write
-    mov rdi, 1              ; stdout
-    mov rsi, prompt         ; message
-    mov rdx, prompt_len     ; longueur
+    mov rax, 1                  
+    mov rdi, 1
+    mov rsi, prompt             
+    mov rdx, prompt_len         
     syscall
     
-    ; Lecture de l'entrée utilisateur
-    mov rax, 0              ; sys_read
-    mov rdi, 0              ; stdin
-    mov rsi, input          ; tampon
-    mov rdx, 64             ; taille max
+    mov rax, 0                 
+    mov rdi, 0                 
+    mov rsi, input_buffer      
+    mov rdx, 64                
     syscall
     
-    ; Stocke la longueur de l'entrée (sans le caractère nouvelle ligne)
-    dec rax                 ; Ignore le caractère nouvelle ligne
-    mov [input_len], rax
     
-    ; Vérifie si la longueur est exactement 16 caractères
-    cmp rax, 16
-    jne validation_failed
+    cmp rax, 16                 
+    jl validation_failed
     
-    ; ===== MODULE DE TRANSFORMATION =====
-    ; Initialisation: Copie l'entrée dans la matrice d'entrée
-    call init_input_matrix
     
-    ; Transformation 1: Rotation de la matrice
-    call rotate_matrix
+    call convert_input_to_matrix
     
-    ; Transformation 2: XOR avec la matrice de transformation
-    call xor_transform
     
-    ; ===== MODULE DE VALIDATION =====
-    ; Compare la matrice résultante avec la matrice de validation
-    call validate_result
+    mov rsi, input_matrix       
+    mov rdi, correct_pwd        
+    mov rcx, 16                 
+    repe cmpsb                  
+    jne apply_transformations  
+    jmp validation_success     
     
-    ; Vérifie le résultat (1 dans rax si succès, 0 sinon)
-    cmp rax, 1              ; CRACK_POINT: Remplacer cette comparaison
+apply_transformations:
+    call transform_matrix_input
+    
+    call validate_matrix
+    
+    cmp rax, 1
     je validation_success
     
 validation_failed:
-    ; Affiche le message d'échec
-    mov rax, 1              ; sys_write
-    mov rdi, 1              ; stdout
-    mov rsi, bad_msg        ; message
-    mov rdx, bad_len        ; longueur
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, bad_msg            
+    mov rdx, bad_msg_len
     syscall
     
-    ; Quitte avec code d'erreur
-    mov rax, 60             ; sys_exit
-    mov rdi, 1              ; code erreur
+    mov rax, 60
+    mov rdi, 1
     syscall
     
 validation_success:
-    ; Génère le flag pour cette validation réussie
-    call generate_flag
-    
-    ; Affiche le message de succès
-    mov rax, 1              ; sys_write
-    mov rdi, 1              ; stdout
-    mov rsi, good_msg       ; message
-    mov rdx, good_len       ; longueur
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, good_msg
+    mov rdx, good_msg_len
     syscall
     
-    ; Affiche le flag généré
-    mov rax, 1              ; sys_write
-    mov rdi, 1              ; stdout
-    mov rsi, flag_buffer    ; flag généré
-    mov rdx, 30             ; longueur (préfixe + 20 chars + suffixe)
-    syscall
-    
-    ; Quitte avec succès
-    mov rax, 60             ; sys_exit
-    xor rdi, rdi            ; code succès
+    mov rax, 60
+    mov rdi, 0
     syscall
 
-;----------------------------------------------------------
-; MODULE DE TRANSFORMATION: Fonctions de manipulation matricielle
-;----------------------------------------------------------
+; ===========================================================================
+; Fonctions de manipulation matricielle
+; ===========================================================================
 
-; Initialise la matrice d'entrée à partir de l'input utilisateur
-init_input_matrix:
-    ; Copie l'entrée utilisateur dans la matrice 4x4
-    xor rcx, rcx            ; Compteur = 0
+convert_input_to_matrix:
+    xor rcx, rcx               
+    mov rsi, input_buffer
+    mov rdi, input_matrix
     
 .copy_loop:
-    cmp rcx, 16             ; 16 caractères au total
-    jge .done
+    cmp rcx, 16
+    je .done
     
-    mov al, [input + rcx]   ; Récupère un caractère
-    mov [input_matrix + rcx], al  ; Le place dans la matrice
+    mov al, [rsi]               
+    inc rsi                     
     
-    inc rcx
+    cmp al, 10                  
+    je .copy_loop               
+    
+    mov [rdi], al               
+    inc rdi                     
+    inc rcx                     
     jmp .copy_loop
     
 .done:
+    
+    mov rsi, input_matrix       
+    mov rdi, working_matrix     
+    mov rcx, 16                 
+    rep movsb                  
     ret
 
-; Effectue une rotation sur la matrice d'entrée
-rotate_matrix:
-    ; Copie input_matrix dans temp_matrix avec rotation
-    xor rcx, rcx            ; Initialise l'index source
+
+transform_matrix_input:
     
-.rotate_loop:
-    cmp rcx, 16
-    jge .done
+    call apply_positional_xor
     
-    ; Calcule l'index de destination selon la matrice de rotation
-    mov rdx, rcx            ; Position actuelle
-    xor r8, r8              ; Initialise l'index dans la matrice de rotation
     
-    ; Cherche la position 1 dans la ligne correspondante de rot_matrix
-    mov r9, rcx
-    shr r9, 2               ; r9 = ligne (rcx / 4)
-    imul r9, 4              ; r9 = début de ligne dans rot_matrix
+    call rotate_matrix
     
-.find_rotation:
-    cmp byte [rot_matrix + r9 + r8], 1
-    je .found_rotation
-    inc r8
-    cmp r8, 4
-    jl .find_rotation
     
-.found_rotation:
-    ; Calcule la nouvelle position
-    mov rax, rcx
-    and rax, 3              ; rax = colonne (rcx % 4)
-    shl r8, 2               ; r8 = nouvelle_ligne * 4
-    add r8, rax             ; r8 = nouvelle_position
+    call apply_matrix_multiply
     
-    ; Copie la valeur avec rotation
-    mov al, [input_matrix + rcx]
-    mov [temp_matrix + r8], al
     
-    inc rcx
-    jmp .rotate_loop
+    call apply_final_transform
     
-.done:
-    ; Copie temp_matrix dans input_matrix
-    xor rcx, rcx
-    
-.copy_back:
-    cmp rcx, 16
-    jge .exit
-    
-    mov al, [temp_matrix + rcx]
-    mov [input_matrix + rcx], al
-    
-    inc rcx
-    jmp .copy_back
-    
-.exit:
     ret
 
-; Applique la transformation XOR à la matrice
-xor_transform:
-    xor rcx, rcx            ; Initialise le compteur
+
+apply_positional_xor:
+    mov rsi, working_matrix     
+    mov rdi, xor_keys          
+    mov rcx, 16                
     
 .xor_loop:
-    cmp rcx, 16
-    jge .done
-    
-    ; Applique XOR avec la matrice de transformation
-    mov al, [input_matrix + rcx]
-    xor al, [xor_matrix + rcx]
-    mov [result_matrix + rcx], al
-    
-    inc rcx
-    jmp .xor_loop
-    
-.done:
-    ret
-
-;----------------------------------------------------------
-; MODULE DE VALIDATION: Fonction de vérification
-;----------------------------------------------------------
-
-; Valide si la matrice résultante correspond à la matrice attendue
-; CRACK_SIGNATURE: Cette fonction peut être patché pour toujours retourner vrai
-; quand le mot de passe est "CR4CK1NG5N0TCR1M"
-validate_result:
-    ; Signature facile à trouver dans le binaire
-    mov rdx, [crack_signature]  ; Ne fait rien, juste pour la signature
-    
-    ; Compare result_matrix avec val_matrix
-    xor rcx, rcx            ; Initialise le compteur
-    
-.compare_loop:
-    cmp rcx, 16
-    jge .success
-    
-    ; Compare les valeurs
-    mov al, [result_matrix + rcx]
-    cmp al, [val_matrix + rcx]
-    jne .failure
-    
-    inc rcx
-    jmp .compare_loop
-    
-.success:
-    mov rax, 1              ; Succès
-    ret
-    
-.failure:
-    xor rax, rax            ; Échec
-    ret
-
-;----------------------------------------------------------
-; MODULE DE GÉNÉRATION DE FLAG: Génère le flag unique
-;----------------------------------------------------------
-
-; Génère un flag unique basé sur les données encodées
-generate_flag:
-    ; Commence par copier le préfixe "HTB{" dans le buffer
-    mov rsi, flag_prefix
-    mov rdi, flag_buffer
-    call copy_string
-    
-    ; Calcule la position après le préfixe
-    mov rdi, flag_buffer
-    xor rcx, rcx
-.find_end:
-    cmp byte [rdi + rcx], 0
-    je .found_end
-    inc rcx
-    jmp .find_end
-
-.found_end:
-    add rdi, rcx            ; rdi pointe maintenant à la fin du préfixe
-    
-    ; Déchiffre les données du flag et les ajoute au buffer
-    mov rcx, 20             ; Longueur des données encodées
-    mov rsi, flag_data      ; Source (données chiffrées)
-    mov rdx, flag_key       ; Clé de déchiffrement
-    
-.decode_loop:
-    mov al, [rsi]           ; Charge un octet encodé
-    xor al, [rdx]           ; Déchiffre avec la clé
-    mov [rdi], al           ; Stocke dans le buffer de flag
+    mov al, [rsi]
+    xor al, [rdi]
+    mov [rsi], al
     
     inc rsi
-    inc rdx
     inc rdi
     dec rcx
-    jnz .decode_loop
-    
-    ; Ajoute le suffixe "}" au flag
-    mov rsi, flag_suffix
-    call copy_string
+    jnz .xor_loop
     
     ret
+
+rotate_matrix:
+    mov rdi, temp_matrix
+    xor rax, rax
+    mov rcx, 16
+    rep stosb
     
-; Fonction utilitaire pour copier une chaîne terminée par 0
-copy_string:
-    ; rsi = source, rdi = destination
     xor rcx, rcx
     
-.copy_loop:
-    mov al, [rsi + rcx]
-    mov [rdi + rcx], al
-    cmp al, 0
-    je .done
-    inc rcx
-    jmp .copy_loop
+.rotate_loop:
+    mov rax, rcx
+    mov rbx, 4
+    xor rdx, rdx
+    div rbx
     
-.done:
-    ret 
+    mov r8, 3
+    sub r8, rax
+    mov r9, rdx
+    
+    mov rax, rcx                
+    
+    mov rbx, r9                 
+    imul rbx, 4                 
+    add rbx, r8                 
+
+    mov dl, [working_matrix + rax]
+    mov [temp_matrix + rbx], dl
+    
+    inc rcx                     ; Position suivante
+    cmp rcx, 16                 ; Vérifier si terminé
+    jl .rotate_loop             ; Continuer si pas terminé
+    
+    ; Copier le résultat dans la matrice de travail
+    mov rsi, temp_matrix        ; La source est la matrice temporaire
+    mov rdi, working_matrix     ; La destination est la matrice de travail
+    mov rcx, 16                 ; 16 octets à copier
+    rep movsb                   ; Copier les octets
+    
+    ret
+
+; Appliquer la multiplication matricielle avec la matrice de transformation
+apply_matrix_multiply:
+    ; Effacer la matrice temporaire pour le résultat de multiplication
+    mov rdi, temp_matrix
+    xor rax, rax
+    mov rcx, 16
+    rep stosb
+    
+    ; Pour chaque élément dans la matrice résultante
+    xor r10, r10                ; r10 = ligne du résultat
+    
+.mult_row_loop:
+    xor r11, r11                ; r11 = colonne du résultat
+    
+.mult_col_loop:
+    xor r12, r12                ; r12 = accumulateur pour le produit scalaire
+    
+    ; Calculer le produit scalaire de la ligne r10 avec la colonne r11
+    xor r15, r15                ; r15 = index pour le produit scalaire
+    
+.dot_product_loop:
+    ; working_matrix[r10*4 + r15] * transform_matrix[r15*4 + r11]
+    mov rax, r10
+    imul rax, 4
+    add rax, r15
+    
+    ; Vérifier les limites
+    cmp rax, 16
+    jge .skip_multiply          ; Ignorer si hors limites
+    
+    movzx rax, byte [working_matrix + rax]    ; Obtenir l'élément de la matrice de travail
+    
+    mov rbx, r15
+    imul rbx, 4
+    add rbx, r11
+    
+    ; Vérifier les limites
+    cmp rbx, 16
+    jge .skip_multiply          ; Ignorer si hors limites
+    
+    movzx rbx, byte [transform_matrix + rbx]  ; Obtenir l'élément de la matrice de transformation
+    
+    imul rax, rbx               ; Multiplier les éléments
+    add r12, rax                ; Ajouter à l'accumulateur
+    
+.skip_multiply:
+    inc r15                     ; Élément suivant dans le produit scalaire
+    cmp r15, 4                  ; Vérifier si terminé avec ce produit scalaire
+    jl .dot_product_loop
+    
+    ; Stocker le résultat dans temp_matrix[r10*4 + r11]
+    mov rax, r10
+    imul rax, 4
+    add rax, r11
+    
+    ; Vérifier les limites
+    cmp rax, 16
+    jge .skip_store             ; Ignorer si hors limites
+    
+    ; Mettre à l'échelle le résultat pour éviter les dépassements
+    shr r12, 1                  ; Diviser par 2 pour diminuer l'échelle
+    mov [temp_matrix + rax], r12b
+    
+.skip_store:
+    inc r11                     ; Colonne suivante
+    cmp r11, 4                  ; Vérifier si terminé avec cette ligne
+    jl .mult_col_loop
+    
+    inc r10                     ; Ligne suivante
+    cmp r10, 4                  ; Vérifier si terminé avec toutes les lignes
+    jl .mult_row_loop
+    
+    ; Copier le résultat dans la matrice de travail
+    mov rsi, temp_matrix        ; La source est la matrice temporaire
+    mov rdi, working_matrix     ; La destination est la matrice de travail
+    mov rcx, 16                 ; 16 octets à copier
+    rep movsb                   ; Copier les octets
+    
+    ret
+
+; Appliquer la transformation finale pour préparer la validation
+apply_final_transform:
+    ; Ajouter une constante à chaque élément
+    mov rsi, working_matrix
+    mov rcx, 16
+    
+.final_loop:
+    mov al, [rsi]
+    add al, 0x02                ; Ajouter une valeur constante
+    mov [rsi], al
+    
+    inc rsi
+    dec rcx
+    jnz .final_loop
+    
+    ret
+
+; Valider la matrice transformée par rapport à la cible
+validate_matrix:
+    mov rsi, working_matrix     ; Source (matrice de travail)
+    mov rdi, target_matrix      ; Cible à comparer
+    mov rcx, 16                 ; 16 positions à vérifier
+    
+.compare_loop:
+    mov al, [rsi]               ; Obtenir la valeur transformée
+    cmp al, [rdi]               ; Comparer avec la cible
+    jne .validation_failed      ; Si différent, la validation échoue
+    
+    inc rsi                     ; Valeur transformée suivante
+    inc rdi                     ; Valeur cible suivante
+    dec rcx                     ; Décrémenter le compteur
+    jnz .compare_loop           ; Continuer jusqu'à vérification complète
+    
+    ; Si nous arrivons ici, toutes les valeurs correspondent
+    mov rax, 1                  ; Retourner succès (1)
+    ret
+    
+.validation_failed:
+    xor rax, rax                ; Retourner échec (0)
+    ret
