@@ -109,7 +109,7 @@ prepare_expected:
     pop rbp
     ret
 
-; Fonction qui applique notre "Chess Cipher"
+; Fonction qui applique notre "Chess Cipher"   
 
 chess_cipher:
     push rbp
@@ -144,7 +144,7 @@ cipher_loop:
     movzx rcx, byte [chess_values+rbx]
     add al, cl
     
-    ; Phase 4: XOR avec valeur calculée (2*index+5)
+    ; Phasee 4: XOR avec valeur calculée (2*index+5)
     mov rdx, rbx
     shl rdx, 1
     add rdx, 5
