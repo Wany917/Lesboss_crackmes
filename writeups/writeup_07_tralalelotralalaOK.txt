@@ -1,0 +1,48 @@
+Reconnaissance rapide
+
+
+file ; strings ; objdump -d -M intel
+On repère init_tables, transform_byte, et les messages Good Job! / Bad Password!.
+
+strings tralalelotralala | less
+
+objdump -d -M intel tralalelotralala | less
+
+readelf -S tralalelotralala
+
+xxd -s 0x2000 -l 64 tralalelotralala
+
+
+Repérage des “seeds”
+Dans .data à 0x402000 : quatre blocs de 16 octets.
+Hex-dump via xxd ; on les appelle seed1..4
+
+init_tables = XOR constants
+
+
+key_xor      = seed1 ^ 0x55
+key_rot      = seed2 ^ 0x33
+key_add      = seed3 ^ 0xAA
+enc_expected = seed4 ^ 0x3C
+transform_byte (vue ASM)
+
+
+out = rol( (inp ^ key_xor[i]) , key_rot[i] & 7 ) + key_add[i]
+
+Inversion en Python (16 octets)
+
+
+def ror(b,n): return ((b>>n)|(b<<(8-n))) & 0xFF
+flag = bytes(
+    ( (enc_expected[i]-key_add[i]) & 0xFF ) ^
+    key_xor[i] if False else 0  # xor après rotation
+    for i in range(16)
+)
+# avec ror à la place de rol, bien sûr
+cela donne niquelecasinoabc
+
+Validation
+
+./tralalelotralala   
+niquelecasinoabc
+ → Good Job!
