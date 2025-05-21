@@ -1,4 +1,4 @@
-Write-up - Reverse Engineering du binaire Favé
+Write-up Favé
 Informations générales
 Fichier analysé : Favé
 

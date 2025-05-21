@@ -1,29 +1,32 @@
 Writeup du Crackme "crackme"
+
 Informations de base
+
 J'ai commencé par regarder le fichier avec file :
 
 
 file crackme
 Le résultat m'a dit que c'était :
 
-un exécutable ELF 64-bit,
+un exécutable ELF 64-bit
 
-statiquement lié (donc pas besoin de librairies externes),
-
-non strippé (les symboles de debug sont encore là, ce qui aide beaucoup).
+statiquement lié (donc pas besoin de librairies externes),non strippé (les symboles de debug sont encore là, ce qui aide beaucoup).
 
 Analyse statique
 
 Symboles présents
+
 J'ai utilisé nm pour voir les symboles du binaire :
 
 
 nm crackme
+
 J'ai vu que tous les symboles avaient des noms très étranges (que des "w" répétés), et surtout qu'il n'y avait pas de fonction main classique.
 
 Le point d'entrée du programme est _start, ce qui est normal pour un exécutable ELF brut.
 
 Désassemblage
+
 Ensuite, j'ai désassemblé tout le binaire avec :
 
 
@@ -48,6 +51,7 @@ Il compare le résultat avec un buffer situé vers 0x40201b.
 L'algorithme utilise une clé XOR située à 0x402002.
 
 Analyse dynamique
+
 Pour récupérer les données nécessaires, j'ai lancé gdb :
 
 
@@ -75,7 +79,7 @@ Calcul du mot de passe
 Voici ce que j'ai calculé :
 
 
-Byte chiffré	XOR 0x12	Caractère
+Byte chiffré XX XOR 0x12 = Caractère
 0x41	0x53	S
 0x21	0x33	3
 0x51	0x43	C
@@ -92,6 +96,8 @@ Byte chiffré	XOR 0x12	Caractère
 0x56	0x44	D
 0x73	0x61	a
 0x70	0x62	b
+
+
 Quand j'assemble tout, j'obtiens le mot de passe :
 
 

@@ -1,4 +1,4 @@
-Labyrinth — Write-up complet 
+Labyrinth — Write-up 
 
 
  Reconnaître le binaire : 
@@ -22,7 +22,7 @@ check_key
 correct_flag
 msg_good
 
-La chaîne “ABCDEFGHIJKLMNOP” saute aux yeux : elle fait 16 caractères, exactement le format demandé pour le flag.
+La chaîne “ABCDEFGHIJKLMNOP” m'a sauté aux yeux : elle fait 16 caractères, exactement le format demandé pour le flag.
 
 echo "ABCDEFGHIJKLMNOP" | ./Labyrinth
 Good Job!
@@ -36,4 +36,4 @@ objdump -d Labyrinth | grep -A4 -n "check_key"
 
 Le désassemblage montre que la fonction check_key lit 16 octets et les compare au littéral 0x41…0x50 (les codes ASCII de A→P).
 
-J’ai ainsi bouclé la boucle en lisant le code machine.
+j’ai donc bouclé la boucle en lisant le code machine.

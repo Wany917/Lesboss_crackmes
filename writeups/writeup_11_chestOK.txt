@@ -1,4 +1,4 @@
-Write-up – Binaire chest : 
+Write-up – chest : 
 
 file chest
 checksec --file chest
@@ -6,7 +6,7 @@ ELF 64-bit, pas de PIE (adresses fixes) et pas de canary.
 
 On pourra donc lire les adresses absolues 0x4022xx / 0x4023xx vues dans le désassemblage.
 
-Coup d’œil aux chaînes
+Coup doeil aux chaînes
 
 strings -n4 chest | head -n 40
 On repère :
@@ -15,13 +15,15 @@ On repère :
 After a shipwreck ...
 Bad Password!
 Good Job!
- On sait déjà qu’il faut trouver le « password ».
+ On sait déjà qu’il faut trouver le  password .
 
-3. Désassemblage
+Désassemblage
 
 objdump -d chest > chest.asm
-3.1 Reconstruction du secret
-Vers 0x40108d :
+
+Reconstruction du secret
+
+vvers 0x40108d :
 
 
 movabs rsi, 0x4022ee          ; src
@@ -40,7 +42,7 @@ LOOP1:
 Puis juste après (0x4010b6) :
 
 
-mov al, [0x4022f6] ; idem pour f7, f8
+mov al, [0x4022f6] ; idem pour f7, et f8
 xor al, 0x7
 sub al, 0x2
 mov [0x40237x], al
@@ -51,12 +53,13 @@ L’octet 11 est copié brut depuis 0x402255, puis les octets 12-15 subissent à
 
 Au final, les 16 octets terminent dans 0x402368–0x402377.
 
-3.2 Comparaison avec l’entrée
+Comparaison avec l’entrée
+
 Vers 0x40115f puis 0x4011a4 :
 
 
-lea rsi, [0x4022fe]     ; buffer de lecture (read)
-lea rdi, [0x402378]     ; buffer contenant le secret
+lea rsi, [0x4022fe]     ;buffer de lecture (read)
+lea rdi, [0x402378]     ;buffer qui contient le secret
 mov ecx, 0x10
 LOOP_CMP:
     mov al, [rsi]
@@ -67,35 +70,35 @@ LOOP_CMP:
     loop LOOP_CMP
 jmp Good_Job
 
-Aucun traitement sur notre saisie : il suffit de saisir exactement ce qui est stocké en 0x402368+
+aucun traitement sur notre saisie : il suffit de saisir exactement ce qui est stocké en 0x402368+
 
 
-Extraction rapide du flag
+On fait une extraction rapide du flag
 
-Petit script Python :
+petit script Python :
 
 
-# read flag directly from the binary
+
 data = open('chest', 'rb').read()
 va_to_off = lambda va: va - 0x400000
 
-def b(va):        # lit un octet à l'adresse virtuelle
+def b(va):        #lit un octet à l'adresse virtuelle
     return data[va_to_off(va)]
 
 const = []
 
-# octets 0-7 : XOR 0x42, -0x10
+#octets 0-7 :XOR 0x42, -0x10
 for i in range(8):
     const.append(((b(0x4022ee + i) ^ 0x42) - 0x10) & 0xff)
 
-# octets 8-10 : XOR 0x07, -0x02
+#octets 8-10 :XOR 0x07, -0x02
 for i in range(0x4022f6, 0x4022f9):
     const.append(((b(i) ^ 0x07) - 0x02) & 0xff)
 
-# octet 11 : copié brut depuis 0x402255
+#octet 11 :copié brut depuis 0x402255
 const.append(b(0x402255))
 
-# octets 12-15 : XOR 0x07, -0x02
+#octets 12-15 :XOR 0x07, -0x02
 for i in range(0x4022fa, 0x4022fe):
     const.append(((b(i) ^ 0x07) - 0x02) & 0xff)
 
@@ -103,4 +106,4 @@ flag = bytes(const).decode()
 print(flag) 
 
 
-Flag trouvé : ch3st_c0d3_rock'
+Le bon flag trouvé : ch3st_c0d3_rock'

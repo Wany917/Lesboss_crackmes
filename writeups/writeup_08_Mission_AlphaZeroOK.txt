@@ -1,20 +1,23 @@
-Write-up : Extraction du flag code{Vyb#Hq6y?e}
+Write-up : 
 
 Contexte
 
 On dispose du binaire ELF Mission_Lancement_Alpha_Zero (64 bits).
 
-Objectif : retrouver un flag de 16 caractères.
+l'Objectif : retrouver le flag de 16 caractères.
 
-0. Terrain de jeu
+
 
 $ file Mission_Lancement_Alpha_Zero
 Mission_Lancement_Alpha_Zero: ELF 64-bit LSB executable, x86-64, ...
+
 $ chmod +x Mission_Lancement_Alpha_Zero
+
 Un simple lancement sans argument :
 
 
 $ ./Mission_Lancement_Alpha_Zero
+
 [ … gros ASCII-art … ]
 La fusee Astraeus IX est prete...
 Bad Password!
@@ -37,30 +40,35 @@ xxd -s $((10499 + 14)) -l 64 'Mission_Lancement_Alpha_Zero(2)'
 
 Trois blocs de 16 octets juste à la suite : intéressant !
 
-2. Vue rapide du code – objdump
+Vue rapide du code – objdump
 
 $ objdump -d Mission_Lancement_Alpha_Zero | less
 
-Pas besoin de tout décortiquer :
-on voit quatre petites fonctions appelées après la lecture de l’entrée ;
-la 1ère vérifie la longueur == 16,
-les 3 autres manipulent un tampon (XOR / rotations) puis comparent aux 3 blocs.
+Pas besoin de tout creuser:
 
-3. Hypothèse & test dans Python
+on voit quatre petites fonctions appelées après la lecture de l’entrée ;
+
+la 1ère vérifie la longueur == 16,
+
+les 3 autres manipulent un tampon (XOR / rotations) et comparent aux 3 blocs.
+
+Hypothèse & test dans Python
+
 On soupçonne que deux blocs servent de clé/chiffrement pour le troisième (ou pour l’entrée).
 
-Après avoir extrait deux blocs de 16 octets chacun dans la section .data du binaire, nous avons appliqué un XOR entre ces deux blocs (bloc1 ⊕ bloc3). 
-Cette opération est réversible et permet ici de retrouver directement le flag caché. En effet, le développeur avait stocké une version chiffrée du flag à l'aide de cette méthode simple mais efficace.
+Après avoir extrait deux blocs de 16 octets chacun dans la section .data du binaire, on a appliqué un XOR entre ces deux blocs (bloc1 ⊕ bloc3). 
+Cette opération est réversible et permet ici de retrouver directement le flag caché. 
+En effet, l'étudiant ayant développé le crackme avait stocké une version chiffrée du flag à l'aide de cette méthode simple mais efficace.
 
 
 
-Python script : 
+Python scripte : 
 
 from pathlib import Path
 
 data = Path('Mission_Lancement_Alpha_Zero(2)').read_bytes()
 
-offset = 10499 + 14   #Calcul de l'offset des blocs après "Bad Password!" :
+offset = 10499 + 14   #Calcul de l'offset des bloc après "Bad Password!" :
 
 bloc1 = data[offset : offset+16]
 bloc2 = data[offset+16 : offset+32]
@@ -70,7 +78,7 @@ flag = bytes([a ^ c for a, c in zip(bloc1, bloc3)])
 print(flag.decode())
 
 
-résult : rcode{Vyb#Hq6y?e
+résultat : rcode{Vyb#Hq6y?e
 
 16 octets, entièrement imprimables c'est surement le bon flag à quelques changements près.
 
