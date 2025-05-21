@@ -10,44 +10,41 @@ Ce crackme traite l'entrée utilisateur (un mot de passe de 16 caractères) comm
 
 ## Mécanismes de protection
 
-- Traitement de l'entrée utilisateur comme une matrice 4x4
-- Transformations mathématiques basées sur la position
-- Rotation de la matrice
-- Multiplication matricielle avec matrice de transformation
-- Opérations XOR dynamiques
+-Traitement de l'entrée utilisateur comme une matrice 4x4
+-Transformations mathématiques basées sur la position
+-Rotation de la matrice
+-Multiplication matricielle avec matrice de transformation
+-Opérations XOR dynamiques
 
-## Indications
+## Mot de passe
+Le mot de passe attendu est `M4TR1XXTR4NSF0RM`
 
-1. Le mot de passe est exactement 16 caractères
-2. La matrice d'entrée subit plusieurs transformations:
-   - XOR position-dépendant
-   - Rotation de 90 degrés
-   - Multiplication avec une matrice de transformation
-   - Ajout d'une constante
-3. La matrice finale doit correspondre à la matrice cible
+
+
+## Compilation
+
+nasm -f elf64 matrix_validator.s -o matrix_validator.o
+ld matrix_validator.o -o matrix_validator
+
 
 ## Utilisation
 
-Pour tester ce crackme:
-
-```bash
 ./matrix_validator
-```
+# Saisir le mot de passe quand demandé
 
-Entrez un mot de passe de 16 caractères et le programme affichera:
+## Challenge
+Le véritable défi consiste à comprendre les transformations appliquées à l'entrée et à déterminer quel mot de passe produira une validation réussie, ce qui permettra de résoudre le défi.
 
-- Un flag au format `crk{...}` et un code de retour 0 si le mot de passe est correct
-- "Bad Password!" et un code de retour 1 si le mot de passe est incorrect
+## Indices
+- Le flag fait exactement 16 caractères
+- Pensez aux opérations mathématiques classiques sur les matrices 4x4
+- Les transformations sont appliquées séquentiellement 
 
-> Note: Le mot de passe à utiliser pour les tests est : "M4TR1X_TR4NSF0RM"
+## Indications
 
-## Approche architecturale
-
-Le programme est structuré de manière modulaire avec des sections claires:
-
-- Entrée/sortie utilisateur
-- Fonctions de manipulation de matrices
-- Fonctions de transformation
-- Validation
-
-Cette architecture facilite l'analyse en isolant les différentes fonctionnalités tout en rendant le reverse engineering suffisamment intéressant.
+La matrice d'entrée subit plusieurs transformations:
+XOR position-dépendant
+Rotation de 90 degrés
+Multiplication avec une matrice de transformation
+Ajout d'une constante
+La matrice finale doit correspondre à la matrice cible
