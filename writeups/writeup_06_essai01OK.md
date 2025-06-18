@@ -1,14 +1,63 @@
+# Writeup: Challenge Crackme essai_01
+
+## Informations sur le Crackme
+
+- **Équipe cible** : Non spécifiée
+- **Nom du fichier** : writeup_06_essai01OK.txt
+- **Difficulté estimée** : Non spécifiée
+- **Flag découvert** : `M@nouK@nA$$te@m*`
+
+## Résumé
+
 Writeup Challenge Crackme essai_01
 
 Informations initiales
 
 Avant de commencer l'analyse, j'ai récolté des informations de base sur ce fichier.
 
-$ file essai_01
+```
+file essai_01
+```
 
 essai_01: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, not stripped
 
 Le binaire est un exécutable ELF 64-bit pour architecture x86-64. Il est statiquement lié (toutes les bibliothèques sont incluses directement dans l'exécutable) et n'est pas "strippé", ce qui signifie que les symboles de débogage sont toujours présent
+
+## Outils Utilisés
+
+Analyse des données
+
+J'ai examiné la section des données pour comprendre l'algorithme de vérification :
+
+```
+objdump -s -j .data essai_01
+```
+
+essai_01:     format de fichier elf64-x86-64
+
+Contenu de la section .data :
+ 402000 0f022c2d 3709022c 03666636 27022f68  ..,-7..,.ff6'./h
+ 402010 050c0009 030f0702 0b040e08 010a060d  ................
+ 402020 42476f6f 64204a6f 62210a00 42616420  BGood Job!..Bad
+ 402030 50617373 776f7264 210a0000 00000000  Password!.......
+ 402040 00000000 00000000 00000000 00000000  ................
+
+J'ai identifié trois parties importantes dans la section de données :
+
+Une comparaison indirecte avec les valeurs attendues
+
+Les outils utilisés pour ce challenge étaient :
+
+```
+file (identification du type de fichier)
+strings (extraction des chaînes de caractères)
+nm (examen des symboles)
+objdump (désassemblage du code)
+readelf (analyse des sections ELF)
+un script JavaScript pour inverser l'algorithme
+```
+
+## Analyse Statique
 
 Analyse statique
 
@@ -16,6 +65,7 @@ Extraction des chaînes de caractères
 
 J'ai commencé par extraire les chaînes de caractères présentes dans le binaire :
 
+```
 $ strings essai_01
 %  @
 ,-7
@@ -39,6 +89,7 @@ wrong_password
 __bss_start
 _edata
 _end
+```
 
 Les chaînes "Good Job!" et "Bad Password!" suggèrent que le programme attend un mot de passe ou un flag à vérifier.
 
@@ -46,6 +97,7 @@ Examen des symboles
 
 Comme le binaire n'est pas strippé, j'ai pu examiner les symboles présents :
 
+```
 $ nm essai_01
 000000000040202c d bad_msg
 00000000004020a0 D __bss_start
@@ -64,6 +116,7 @@ $ nm essai_01
 0000000000402010 d sequence
 0000000000401000 T _start
 00000000004010a4 t wrong_password
+```
 
 L'analyse des symboles révèle plusieurs points intéressants :
 
@@ -73,37 +126,21 @@ Des sections comme compare_loop, correct_password et wrong_password qui indiquen
 
 Des variables comme data_table, sequence et magic_byte qui sont probablement utilisées dans l'algorithme de vérification
 
-
 Analyse des sections
 
+```
 readelf -S essai_01
+```
 
 Il y a 6 en-têtes de section, débutant à l'adresse de décalage 0x2340 :
-
-En-têtes de section :
-
-  [Nr] Nom               Type             Adresse           Décalage
-       Taille            TaillEntrée      Fanion Lien  Info  Alignement
-  [ 0]                   NULL             0000000000000000  00000000
-       0000000000000000  0000000000000000           0     0     0
-  [ 1] .text             PROGBITS         0000000000401000  00001000
-       00000000000000cb  0000000000000000  AX       0     0     16
-  [ 2] .data             PROGBITS         0000000000402000  00002000
-       00000000000000a0  0000000000000000  WA       0     0     4
-  [ 3] .symtab           SYMTAB           0000000000000000  000020a0
-       00000000000001c8  0000000000000018           4    15     8
-  [ 4] .strtab           STRTAB           0000000000000000  00002268
-       00000000000000af  0000000000000000           0     0     1
-  [ 5] .shstrtab         STRTAB           0000000000000000  00002317
-       0000000000000027  0000000000000000           0     0     1
-
-
 
 Analyse approfondie
 
 Désassemblage du code
 
-$ objdump -d essai_01
+```
+objdump -d essai_01
+```
 
 essai_01:     format de fichier elf64-x86-64
 
@@ -113,7 +150,7 @@ Déassemblage de la section .text :
   401000:       b8 00 00 00 00          mov    $0x0,%eax
   401005:       bf 00 00 00 00          mov    $0x0,%edi
   40100a:       48 be 3b 20 40 00 00    movabs $0x40203b,%rsi
-  401011:       00 00 00 
+  401011:       00 00 00
   401014:       ba 64 00 00 00          mov    $0x64,%edx
   401019:       0f 05                   syscall
   40101b:       48 31 c9                xor    %rcx,%rcx
@@ -131,12 +168,12 @@ Déassemblage de la section .text :
   40103c:       75 66                   jne    4010a4 <wrong_password>
   40103e:       b9 10 00 00 00          mov    $0x10,%ecx
   401043:       c6 04 25 9f 20 40 00    movb   $0x0,0x40209f
-  40104a:       00 
+  40104a:       00
 000000000040104b <compare_loop>:
   40104b:       48 0f b6 14 25 9f 20    movzbq 0x40209f,%rdx
-  401052:       40 00 
+  401052:       40 00
   401054:       48 0f b6 9a 10 20 40    movzbq 0x402010(%rdx),%rbx
-  40105b:       00 
+  40105b:       00
   40105c:       8a 83 3b 20 40 00       mov    0x40203b(%rbx),%al
   401062:       32 04 25 20 20 40 00    xor    0x402020,%al
   401069:       8a 9b 00 20 40 00       mov    0x402000(%rbx),%bl
@@ -149,7 +186,7 @@ Déassemblage de la section .text :
   40107f:       b8 01 00 00 00          mov    $0x1,%eax
   401084:       bf 01 00 00 00          mov    $0x1,%edi
   401089:       48 be 21 20 40 00 00    movabs $0x402021,%rsi
-  401090:       00 00 00 
+  401090:       00 00 00
   401093:       ba 0a 00 00 00          mov    $0xa,%edx
   401098:       0f 05                   syscall
   40109a:       b8 3c 00 00 00          mov    $0x3c,%eax
@@ -164,25 +201,13 @@ Vérification de la longueur du mot de passe (0x401038 - compare avec 0x10 = 16)
 
 Boucle de comparaison qui utilise un mécanisme de vérification spécial (0x40104b - 0x40107d)
 
-Analyse des données
+## Analyse Dynamique
 
-J'ai examiné la section des données pour comprendre l'algorithme de vérification :
+L'exécution de ce script m'a donné le mot de passe correct : M@nouK@nA$$te@m*
+Vérification
 
-$ objdump -s -j .data essai_01
+## Identification du Mécanisme de Validation
 
-essai_01:     format de fichier elf64-x86-64
-
-Contenu de la section .data :
- 402000 0f022c2d 3709022c 03666636 27022f68  ..,-7..,.ff6'./h
- 402010 050c0009 030f0702 0b040e08 010a060d  ................
- 402020 42476f6f 64204a6f 62210a00 42616420  BGood Job!..Bad 
- 402030 50617373 776f7264 210a0000 00000000  Password!.......
- 402040 00000000 00000000 00000000 00000000  ................
-
-J'ai identifié trois parties importantes dans la section de données :
-
-À 0x402000 : Un tableau data_table contenant les valeurs attendues après transformation
-À 0x402010 : Une séquence d'indices sequence qui définit l'ordre de vérification des caractères
 À 0x402020 : Un octet magique magic_byte (0x42, qui est 'B') utilisé dans l'algorithme
 
 Comprendre l'algorithme
@@ -192,39 +217,55 @@ En analysant le code assembleur et les données, j'ai pu déterminer que l'algor
 Le programme lit 16 caractères d'entrée
 Pour chaque position (0-15), il utilise le tableau sequence pour déterminer quel caractère vérifier
 Le caractère est XOR avec magic_byte (0x42)
+
+Vérification
+
+J'ai vérifié le mot de passe en l'entrant dans le programme :
+
+```
+./essai_01
+M@nouK@nA$$te@m*
+```
+
+Good Job!
+
+## Découverte du Flag
+
 Le résultat est comparé à la valeur correspondante dans data_table
 
 Solution
 
 Pour trouver le mot de passe correct, j'ai écrit un petit script qui inverse l'algorithme :
 
+```
 javascript// Les tableaux pour la vérification
 const data_table = [0x0f, 0x02, 0x2c, 0x2d, 0x37, 0x09, 0x02, 0x2c, 0x03, 0x66, 0x66, 0x36, 0x27, 0x02, 0x2f, 0x68];
 const sequence = [0x05, 0x0c, 0x00, 0x09, 0x03, 0x0f, 0x07, 0x02, 0x0b, 0x04, 0x0e, 0x08, 0x01, 0x0a, 0x06, 0x0d];
 const magic_byte = 0x42;
+```
 
 // Tableau pour stocker le mot de passe
+
+```
 const password = new Array(16).fill(0);
+```
 
 // On decode le mdp
 
 for (let i = 0; i < 16; i++) {
+
+```
   const pos = sequence[i];  //Position dans  ltableau password
   password[pos] = data_table[pos] ^ magic_byte;  //XOR avec le magic_byte
 }
+```
 
 //Convertir en caractères ASCII et affichage
 console.log("Mot de passe : " + String.fromCharCode(...password));
 
 L'exécution de ce script m'a donné le mot de passe correct : M@nouK@nA$$te@m*
-Vérification
 
-J'ai vérifié le mot de passe en l'entrant dans le programme :
-
-./essai_01
-M@nouK@nA$$te@m*
-
-Good Job!
+## Conclusion
 
 Conclusion
 
@@ -232,14 +273,32 @@ Ce challenge, il était intéressant car il utilisait plusieurs techniques pour 
 
 Une permutation de l'ordre des caractères grâce au tableau sequence
 Une opération XOR avec un octet magique (0x42)
-Une comparaison indirecte avec les valeurs attendues
 
-Les outils utilisés pour ce challenge étaient :
+### En-têtes de section
 
-file (identification du type de fichier)
-strings (extraction des chaînes de caractères)
-nm (examen des symboles)
-objdump (désassemblage du code)
-readelf (analyse des sections ELF)
-un script JavaScript pour inverser l'algorithme
+En-têtes de section :
 
+```
+  [Nr] Nom               Type             Adresse           Décalage
+       Taille            TaillEntrée      Fanion Lien  Info  Alignement
+  [ 0]                   NULL             0000000000000000  00000000
+       0000000000000000  0000000000000000           0     0     0
+  [ 1] .text             PROGBITS         0000000000401000  00001000
+       00000000000000cb  0000000000000000  AX       0     0     16
+  [ 2] .data             PROGBITS         0000000000402000  00002000
+       00000000000000a0  0000000000000000  WA       0     0     4
+  [ 3] .symtab           SYMTAB           0000000000000000  000020a0
+       00000000000001c8  0000000000000018           4    15     8
+  [ 4] .strtab           STRTAB           0000000000000000  00002268
+       00000000000000af  0000000000000000           0     0     1
+  [ 5] .shstrtab         STRTAB           0000000000000000  00002317
+       0000000000000027  0000000000000000           0     0     1
+```
+
+### À 0x402000
+
+À 0x402000 : Un tableau data_table contenant les valeurs attendues après transformation
+
+### À 0x402010
+
+À 0x402010 : Une séquence d'indices sequence qui définit l'ordre de vérification des caractères

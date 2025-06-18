@@ -1,4 +1,14 @@
-Write-up du crackme "int_80"
+# Writeup: du crackme "int_80"
+
+## Informations sur le Crackme
+
+- **Équipe cible** : Non spécifiée
+- **Nom du fichier** : writeup_05_int_80OK.txt
+- **Difficulté estimée** : Non spécifiée
+- **Flag découvert** : `K3Y5-r3cK-H4xX0r`
+
+## Résumé
+
 Introduction
 
 Ce write-up présente la solution d'un reverse engineering d'un binaire ELF 64-bit nommé "int_80" l'objectif était de trouver un flag de 16 caractères.
@@ -8,6 +18,12 @@ Analyse initiale
 Exécution de file qui confirme un exécutable ELF 64-bit statiquement lié
 
 Extraction des chaînes de caractères avec strings révélant des indices incluant des messages comme "Entrez le flag" et plusieurs messages de distraction
+
+## Outils Utilisés
+
+Extraction des chaînes de caractères avec strings révélant des indices incluant des messages comme "Entrez le flag" et plusieurs messages de distraction
+
+## Analyse Statique
 
 Analyse approfondie
 
@@ -24,6 +40,16 @@ Désassemblage et dynamique du programme
 Le désassemblage avec objdump -d et radare2 montre que le programme :
 
 Demande un flag à l'utilisateur
+
+## Analyse Dynamique
+
+Exécution de file qui confirme un exécutable ELF 64-bit statiquement lié
+
+## Identification du Mécanisme de Validation
+
+Reconstruit le flag correct à partir de deux tableaux en mémoire
+
+## Découverte du Flag
 
 Reconstruit le flag correct à partir de deux tableaux en mémoire
 
@@ -49,3 +75,7 @@ Solution
 Le flag correct est : K3Y5-r3cK-H4xX0r
 
 Cette solution confirme les indices trouvés dans le binaire, notamment l'une des chaînes "fake_flag" qui ressemblait à cette syntaxe.
+
+## Conclusion
+
+Ce crackme a été résolu en comprenant son mécanisme de validation et en élaborant une stratégie appropriée.
