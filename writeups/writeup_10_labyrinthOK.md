@@ -1,44 +1,21 @@
-# Writeup: Reconnaître le binaire
+Labyrinth — Write-up
 
-## Informations sur le Crackme
+ Reconnaître le binaire :
 
-- **Équipe cible** : Non spécifiée
-- **Nom du fichier** : writeup_10_labyrinthOK.txt
-- **Difficulté estimée** : Non spécifiée
-- **Flag découvert** : `ABCDEFGHIJKLMNOP`
+ file Labyrinth
 
-## Résumé
+ J’ai vérifié que c’était bien un exécutable Linux 64 bits
 
-Ce writeup analyse un crackme pour identifier son fonctionnement et retrouver le flag caché.
-
-## Outils Utilisés
-
-Analyse effectuée avec les outils standards pour reverse engineering (objdump, gdb, strings, scripts personnalisés).
-
-## Analyse Statique
-
-La chaîne “ABCDEFGHIJKLMNOP” m'a sauté aux yeux : elle fait 16 caractères, exactement le format demandé pour le flag.
-
-## Analyse Dynamique
+ chmod +x Labyrinth
 
  J’ai ajouté le bit d’exécution pour pouvoir le lancer.
 
-## Identification du Mécanisme de Validation
+ strings -n 4 Labyrinth | less
 
-Vérification au niveau assembleur
+ Parmi les résultats, j’ai repéré :
 
-Pour prouver que la comparaison est bien faite sur cette valeur :
-
-```
-objdump -d Labyrinth | grep -A4 -n "check_key"
-```
-
-Le désassemblage montre que la fonction check_key lit 16 octets et les compare au littéral 0x41…0x50 (les codes ASCII de A→P).
-
-j’ai donc bouclé la boucle en lisant le code machine.
-
-## Découverte du Flag
-
+Bad Password!
+Good Job!
 ABCDEFGHIJKLMNOP
 check_key
 correct_flag
@@ -46,11 +23,15 @@ msg_good
 
 La chaîne “ABCDEFGHIJKLMNOP” m'a sauté aux yeux : elle fait 16 caractères, exactement le format demandé pour le flag.
 
-```
 echo "ABCDEFGHIJKLMNOP" | ./Labyrinth
 Good Job!
-```
 
-## Conclusion
+Vérification au niveau assembleur
 
-Ce crackme a été résolu en comprenant son mécanisme de validation et en élaborant une stratégie appropriée.
+Pour prouver que la comparaison est bien faite sur cette valeur :
+
+objdump -d Labyrinth | grep -A4 -n "check_key"
+
+Le désassemblage montre que la fonction check_key lit 16 octets et les compare au littéral 0x41…0x50 (les codes ASCII de A→P).
+
+j’ai donc bouclé la boucle en lisant le code machine.

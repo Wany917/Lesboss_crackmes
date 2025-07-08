@@ -68,20 +68,4 @@ Résultat :
 
 Good Job!
 
-Cela confirme que 3sn-Z42-3l2-093p est le flag attendu.
-
-## Conclusion
-
-Ce crackme a été résolu en comprenant son mécanisme de validation et en élaborant une stratégie appropriée.
-
-### Étapes réalisées
-
-Étapes réalisées
-
-1. Identification du fichier
-
-Pour commencer, j'ai identifié la nature du fichier avec la commande suivante :
-
-```
-file crackme_00
-```
+Cela confirme que 3sn-Z42-3l2-093p est le flag attendu
