@@ -27,7 +27,7 @@ Idx Name          Size      VMA               LMA               File off  Algn
 
 
 
-Désassemblage : 
+Désassemblage : :
                                                          
 ┌──(kali㉿kali)-[~/Downloads]
 └─$ objdump -D -M intel ./CrackBruhh_v4 > disas3.txt

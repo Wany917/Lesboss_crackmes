@@ -9,7 +9,7 @@ Cestnouslesvainqueurs: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), stat
 └─$ objdump -t Cestnouslesvainqueurs | less
 
 
-En analysant la table des symboles :
+En analysant la table des symboless :
 
 
 Cestnouslesvainqueurs:     file format elf64-x86-64
